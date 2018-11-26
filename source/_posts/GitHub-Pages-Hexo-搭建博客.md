@@ -587,12 +587,12 @@ Gitalk 是一个基于 GitHub Issue 和 Preact 开发的评论插件，使用 Gi
      {% include 'gitalk.swig' %}
      ```
 
-   - 修改主题目录中 `/layout/_partials/comments.swig`文件，在```{% endif %}```前添加如下内容
+   - 修改主题目录中 `/layout/_partials/comments.swig`文件，在 endif 语句前前添加如下内容
 
-   ```js
-   {% elseif theme.gitalk.enable %}
-   	<div id="gitalk-container"></div>
-   ```
+     ```js
+     {% elseif theme.gitalk.enable %}
+     <div id="gitalk-container"></div>
+     ```
 
    - 主题目录下`/source/css/_common/components/third-party`文件夹中
 
@@ -605,9 +605,13 @@ Gitalk 是一个基于 GitHub Issue 和 Preact 开发的评论插件，使用 Gi
      top: 0.7em;
      ```
 
-     - 修改`third-party.styl`文件，末尾添加`@import "gitalk" if hexo-config('gitalk.enable');`
+     - 修改`third-party.styl`文件，末尾添加如下代码
+     
+     ```styl
+     @import "gitalk" if hexo-config('gitalk.enable');
+     ```
 
-5. 重新生成静态网页并推送至GitHub Pages `hexo clearn && hexo g && hexo d`
+5. 重新生成静态网页并推送至GitHub Pages `hexo clean && hexo g && hexo d`
 
 ##### 站点统计
 
@@ -686,32 +690,37 @@ Typora 是一款由 Abner Lee 开发的轻量级 Markdown 编辑器，适用于 
    [跳转至博客的需求](#1)
 
 3. Markdown 引用（quote）中添加代码异常，如下所示
-
-![avatar](https://blogimages-1252423296.cos.ap-beijing.myqcloud.com/blog_pictures/11%E6%9C%88/11-2-markdown-code-in-quote-error.png "Quote 引用代码错误源码")
-
-![avatar](https://blogimages-1252423296.cos.ap-beijing.myqcloud.com/blog_pictures/11%E6%9C%88/11-3-markdown-quote-error-view.png "Quote 引用代码错误页面展示")
-
-会发现代码冲出现了引用符号，引用块中代码下方的引用块分离。Markdown渲染正常，在 Hexo 生成的页面中不一致，可通过如下方法解决
-
-* 将代码块结尾的三个反引号与下一行文字之间的空行删除
+<img src="https://blogimages-1252423296.cos.ap-beijing.myqcloud.com/blog_pictures/11%E6%9C%88/11-3-markdown-quote-error-view.png" width="80%"/>
+会发现代码冲出现了引用符号，引用块中代码下方的引用块分离。Markdown渲染正常，在 Hexo 生成的页面中不一致，可通过如下方法解决(第二种方式更优雅方便)。
+同时，若此处出现类初始化函数的下划线会被 Hexo 渲染器识别为 HTML 元素再传递，Math 公式中同样浮现该问题，建议将渲染器更换。详情 [Hexo-Theme-Next Issues 826](https://github.com/iissnan/hexo-theme-next/issues/826)。
+{% codeblock lang:bash %}
+npm uninstall hexo-renderer-marked --save
+npm install hexo-renderer-kramed --save
+{% endcodeblock %}
+* 将代码块结尾的三个反引号与下一行文字之间的空行删除，用四个空格实现
 * 使用 Hexo 官网给定的另一种[插入代码块的方式](https://hexo.io/zh-cn/docs/tag-plugins.html#%E6%A0%B7%E4%BE%8B-1)，代码示例
 ```
+{% blockquote %}
+上述代码在 Quote 中效果如下
 {% codeblock lang:python %}
 # test for code in quote
 print("Hello World!")
 {% endcodeblock %}
+{% endblockquote %}
+注：Hexo quote 中引用代码块，注意其 Markdown 解析器的不一致。
 ```
 
-> 
-> 上述代码在 Quote 中效果如下
+{% blockquote %}
+上述代码在 Quote 中效果如下
 {% codeblock lang:python %}
-    # test for code in quote
-    print("Hello World!")
+# test for code in quote
+print("Hello World!")
 {% endcodeblock %}
 
 注：Hexo quote 中引用代码块，注意其解析的不一致。
+{% endblockquote %}
 
-### 后记
+### 后记 ###
 
 花费了一周多时间终于完成了本篇博客的撰写。一直在努力避免将一篇博客写的太细太长，不知不觉还是写了很长的篇幅，后续可能考虑拆分博客以为了更好的阅读体验，比如将 Hexo 相关部分独立。
 
