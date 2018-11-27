@@ -971,7 +971,7 @@ m.connect()
 终止 `manager` 进程。该方法只有在服务进程执行过 `start()` 方法后才有效。
 该方法可以被多次调用。
 
-**register**(typeid[, callable[, proxytype[, exposed[, method_to_typeid[, create_method]]]]])
+<span id='basemanager.register'>**register**(typeid[, callable[, proxytype[, exposed[, method_to_typeid[, create_method]]]]])</span>
 classmethod，用于注册类型或调用 `manager`。
 
 *typeid* 是类型标识符，用于识别共享对象的类型，字符串类型。
@@ -1170,26 +1170,156 @@ s.serve_forever()
 ```
 
 #### Proxy ####
-On the way!
+代理是一个对象，其指向不同进程间（可能）存在的共享对象。共享对象被认为是代理指向的对象。多个代理对象可能指向同一个共享对象。
+代理对象有调用其引用对象方法的相应方法（虽然不是引用对象的所有方法均需通过代理调用）。代理通常可以如同引用对象一样使用，如下实例所示。
+{% codeblock lang:python %}
+from multiprocessing import Manager
+manager = Manager()
+l = manager.list([i*i for i in range(10)])
+print(l)
+# [0, 1, 4, 9, 16, 25, 36, 49, 64, 81]
+print(repr(l))
+# <ListProxy object, typeid 'list' at 0x...>
+l[4]
+# 16
+l[2:5]
+# [4, 9, 16]
+{% endcodeblock %} 注意使用 `str()` 返回的是饮用对象的，而 `repr()` 返回的是代理对象自身的。
+代理对象的一个重要特征是可序列化的因此可以在不同进程间传输。但是，如果将代理发送到对应的 manager 的进程反序列化将取消引用对象本身。这意味这一个共享对象可以包含第二个共享对象。
+{% codeblock lang:python %}
+a = manager.list()
+b = manager.list()
+a.append(b)         # referent of a now contains referent of b
+print(a, b)
+# [[]] []
+b.append('hello')
+print(a, b)
+# [['hello']] ['hello']
+{% endcodeblock %} {% note info %}
+`multiprocessing` 中的代理类型不支持值比较。因此对如下实例有
+{% codeblock lang:python %}manager.list([1, 2, 3]) == [1, 2, 3] # False {% endcodeblock %} 因此进行比较操作时应使用引用对象的拷贝。
+{% endnote %}
 
 *class* multiprocessing.managers.**BaseProxy**
 {% blockquote %}
-On the way!
+代理对象是 `BaseProxy` 子类的实例。
+
+**_callmethod**(*methodname*[, *args*[, *kwds*]])
+调用引用对象方法并返回执行结果。
+`proxy` 是一个引用对象是 `obj` 的代理，表达式
+{% codeblock lang:python %}proxy._callmethod(methodname, args, kwds){% endcodeblock %} 等价于 manager 进程中的表达式 {% codeblock lang:python %}getattr(obj, methodname)(*args, **kwds){% endcodeblock %}
+返回值是调用结果的拷贝或者新共享对象的代理 - *method_to_typeid* 参数参阅 [`BaseManager.register()`](basemanager.register) 文档。
+若调用引发异常，将由 `_call_method` 方法重新引发该异常。若在 manger 进程中引发了其他异常，将其转换为 `RemoteError` 异常并由 `_callmethod()` 引发。
+特别注意：若参数 *methodname* 是引用对象的非公开方法将抛出异常。
+使用该方法的代码实例。
+{% codeblock lang:python %}
+l = manager.list(range(10))
+l._callmethod('__len__')
+# 10
+l._callmethod('__getitem__', (slice(2, 7),)) # equivalent to l[2:7]
+# [2, 3, 4, 5, 6]
+l._callmethod('__getitem__', (20,))          # equivalent to l[20]
+# Traceback (most recent call last):
+# ...
+# IndexError: list index out of range
+{% endcodeblock %}
+
+**_getvalue**()
+返回引用对象的拷贝。
+若引用对象不可以反序列化将引发异常。
+
+**__repr__**()
+返回代理对象的表示。
+
+**__str__**()
+返回引用对象的表示。
+
 {% endblockquote %}
 
 ##### Cleanup #####
-On the way!
+代理对象使用的弱引用回调，当被垃圾回收时，会从拥有其引用的 manager 中注销自己。
+共享对象不再被任何代理对象引用时，从 manager 进程中删除。
 
 #### Process Pool ####
-On the way!
+创建进程池，可以执行使用 `Pool` 类提交给它的任务。
+
 class multiprocessing.pool.Pool([processes[, initializer[, initargs[, maxtasksperchild[, context]]]]])
 {% blockquote %}
-On the way!
+进程池对象，可以控制提交任务的工作进程池，支持异步获取超时或回调结果，具有并行映射的实现。
+*processes* 是使用的工作进程数量。若该参数为 `None` 使用 `os.cpu_count()` 返回的数字。
+若 *initializer* 不是 `None` 则在每个进程 `start()` 时调用该 `initializer(*initargs)` 函数。
+*maxtasksperchild* 是一个工作进程在退出或使用新工作进程取代之前可以完成的任务数，以释放不再使用的资源。默认值是 `None` 意味着工作进程生命周期与进程池一样。
+*context* 可用于指定工作进程 `start()` 的 context。通常通过使用 `multiprocessing.Pool()` 或者 context 对象的 `Pool()` 方法创建进程池。两种情景均可以使用 *context* 设置。
+注：进程池对象的方法仅可以由创建进程池的进程调用。
+版本 3.2 后添加了 *maxtasksperchild*。
+版本 3.4 后添加了 *context*。
+{% note info %}
+注：工作进程的生命周期通常与进程池生命周期一直。在其他系统（如 Apache，mode_wsgi 等）存在频繁切换进程时，在进程退出或者新进程取代旧进程前，释放用于工作进程所拥有的资源的模式。*maxtasksperchild* 参数向用户公开了进程池的这种能力。
+{% endnote %} **apply**(*func*[, *args*[, *kwds*]])
+使用参数 *args* 和 关键字参数 *kwds* 调用 *func* 函数。会阻塞至任务执行结果就绪。`apply_async()` 方法更适合阻塞下的并行执行任务。此外，*func* 仅在进程池中的一个工作进程中执行。
+
+**apply_async**(*func*[, *args*[, *kwds*[, *callback*[, *error_callback*]]]])
+`apply()` 方法的一个变体，返回一个结果对象。
+若指定了参数 *callback*，该参数值应该是带有一个参数的可调用函数。当结果就绪时，对结果调用该函数。若该情况下调用失败，`error_callback` 异常取代返回结果。
+若指定了参数 *error_callback*，该参数值是带有一个参数的可调用函数。当目标函数执行实行，则异常实例作为参数调用该函数。
+回调应该是很快完成的，否则处理结果线程将会阻塞。
+
+**map**(*func*, *iterable*[, *chunksize*])
+内置 `map()` 的并行等价物（只支持一个 *iterable* 参数）。阻塞至结果就绪。
+该方法将迭代对象切分为多个块并将其作为单独任务提交到进程池。可以通过参数 *chunksize* 设置为正整数指定这些块的（近似）大小。
+
+**map_async**(*func*, *iterable*[, *chunksize*[, *callback*[, *error_callback*]]])
+`map()` 方法的一个变种，返回一个结果对象。
+若指定了参数 *callback*，该参数值应该是带有一个参数的可调用函数。当结果就绪时，对结果调用该函数。若该情况下调用失败，`error_callback` 异常取代返回结果。
+若指定了参数 *error_callback*，该参数值是带有一个参数的可调用函数。当目标函数执行实行，则异常实例作为参数调用该函数。
+回调应该是很快完成的，否则处理结果线程将会阻塞。
+
+**imap**(*func*, *iterable*[, *chunksize*])
+一个懒惰版本的 `map()`。
+参数 *chunksize* 与 `map()` 方法的使用相同。对于非常长的迭代对象使用一个较大的 *chunksize* 可以使任务比使用默认为 1 完成的快很多。
+此外，若 *chunksize* 为 1，则该方法返回的迭代器 `next()` 具有可选参数 *timeout*，若在超时时间内（单位为秒）没有返回，`next(timeout)` 将抛出 `multiprocessing.TimeoutError` 异常。
+
+**imap_unordered**(*func*, *iterable*[, *chunksize*])
+除返回的迭代器被认为是无序的外，与 `imap()` 方法相同。（只有当只有一个工作进程时才能保证顺序是正确的）
+
+**starmap**(*func*, *iterable*[, *chunksize*])
+除 *iterable* 的非解包元素作为参数迭代外，与 `map()` 方法相同。
+因此，`[(1, 2), (3, 4)]` 的 *iterable* 参数值迭代为 `[func(1, 2), func(3, 4)]`。
+版本 3.3 后添加。
+
+**starmap_async**(*func*, *iterable*[, *chunksize*[, *callback*[, *error_back*]]])
+`starmap()` 和 `map_async()` 方法的组合。迭代 *iterable* 中的非解包元素并调用 *func* 返回结果对象。 
+版本 3.3 后添加。
+
+**close**()
+防止更多任务被提交到进程池。提交到进程池的所有任务完成后，工作进程退出。
+
+**terminate**()
+立即终止工作进程而不再继续执行未完成的任务。进程池对象被垃圾回收时直接调用该方法。
+
+**join**()
+等待工作进程退出。必须在 `close()` 和 `terminate()` 方法调用前调用该方法。
+
+版本 3.3 后进程池对象开始支持上下文管理协议。
+
 {% endblockquote %}
 
 class multiprocessing.pool.AsyncResult
 {% blockquote %}
-On the way!
+由 `Pool.apply_async()` 和 `Pool.map_async()` 返回结果的类。
+
+**get**([*timeout*])
+返回到达时的结果。若 *timeout* 非 `None` 且结果没有在 *timeout* 时间内返回将抛出 `multiprocessing.TimeoutError` 异常。若远程调用引发了异常，将由该方法重新抛出该异常。
+
+**wait**([*timeout*])
+等待至结果返回或超出 *timeout* 时间。
+
+**ready**()
+返回调用是否完成。
+
+**successfult**()
+返回调用完成是否抛出了异常。若结果还未就绪将抛出 `AssertionError` 异常。
+
 {% endblockquote %}
 
 下面的实例说明如何使用 `Pool`。
@@ -1238,32 +1368,61 @@ multiprocessing.connection.**deliver_challenge**(*connection*, *authkey*)
 若返回的回复使用秘钥作为键匹配数字认证，则向另一端发送欢迎消息。否则抛出 `AuthenticationError` 异常。
 
 multiprocessing.connection.**answer_challenge**(*connection*, *authkey*)
-On the way!
+接收消息，然后使用 *authkey* 作为键计算出消息摘要发送回去。
+若没有收到欢迎消息将抛出 `AuthenticationError` 异常。
 
 multiprocessing.connection.**Client**(*address*[, *family*[, *authenticate*[, *authkey*]]])
-On the way!
+使用 *address* 地址尝试建立到 Listener 的连接，返回 `Connection` 对象。
+连接的类型由参数 *family* 决定，但通常可以省略，因为可以通过地址的格式推断出来（参阅 [Address Formats](#2.10.1)）
+若 *authenticate* 是 `True` 或者 *authkey* 是一个字节字符串，将使用摘要身份认证。用于认证的秘钥是 *authkey*（若参数为 `None` 则使用 `current_process().authkey`）。若认证失败抛出 `AuthenticationError` 异常。参阅 [Authentication keys](#2.11)。
 
 class multiprocessing.connection.**Listener**([*address*[, *family[*, *backlog*[, *authenticate*[, *authkey*]]]]])
-On the way!
 {% blockquote %}
+正在监听连接的包装器，绑定在套接字或 Windows 管道上。
+
+*address* 是 Listener 对象用来绑定套接字或管道的地址。
+{% note info %} 地址 '0.0.0.0' 地址不能是 Windows 的可连接端点，应使用 '127.0.0.1'。{% endnote %} *family* 是使用的套接字（或管道）的类型，如下所示
+1. 'AF_INET' 对应 TCP 套接字；
+2. 'AF_UNIX' 对应 Unix 套接字；
+3. 'AF_PIPE' 对应 Windows 管道。
+
+其中只有第一个是保证可用的。
+若该参数为 `None` 则会从地址格式推断。若 *address* 也是 `None` 选择默认值。默认值被假定为可以最快获取的。参阅 [Address Formats](#2.10.1)。
+注意，若 *family* 是 'AF_UNIX' 且 *address* 为 `None` 将使用 `tempfile.mkstemp()` 在私有临时目录中创建套接字。
+若 Listener 对象使用套接字，一旦绑定该套接字，将向套接字的 `listen()` 方法发送 *backlog*（默认为1）。
+若 *authenticate* 为 `True`（默认为 `False`）或 *authkey* 不是 `None` 将使用摘要身份认证。
+若 *authkey* 是一个字节字符串，其将被用作认证秘钥；否则一定为 `None`。
+若 *authkey* 为 `None` 且 *authenticate* 为 `True` 将使用 `current_process().authkey` 作为认证秘钥。
+若 *authkey* 为 `None` 且 *authenticate* 为 `False` 将不会做认证。若认证失败抛出 `AuthenticationError` 异常。参阅 [Authentication keys](#2.11)。
 
 **accept**()
-On the way!
+尝试连接到 Listener 对象绑定的套接字或管道上，返回 `Connection` 对象。若尝试认证且认证失败，将抛出 `AuthenticationError` 异常。
 
 **close**()
-On the way!
+关闭 Listener 对象绑定的套接字或管道。Listener 对象被垃圾回收时自动调用该方法。**但是**建议明确调用该方法。
 
+Listener 对象还具有如下只读属性。
 **address**
-On the way!
+Listener 对象使用的地址。
 
 **last_accepted**
-On the way!
+上次连接成功使用的地址。若该地址不可用为 `None`。
 
+版本 3.3 后 Listener 对象支持上下文管理协议。
 {% endblockquote %}
 
 multiprocessing.connection.**wait**(*object_list*, *timeout=None*)
-On the way!
+等待 *object_list* 中的对象就绪。返回列表中准备就绪的对象的列表。若 *timeout* 是浮点数 F 该调用至多阻塞 F 秒。若 *timeout* 为 `None` 则阻塞时间没有上限。负数的参数等效于零。
+对 Unix 和 Windows 而言，出现在 *object_list* 中的对象需满足如下要求
+* 可读 `connection` 对象；
+* 可连接、可读的 `socket.socket` 对象；
+* `Process` 对象的 `sentinel` 属性。
+当连接或套接字对象中的数据可以获取时，或者另一端已经关闭时，认为连接或套接字对象已就绪。
 
+**Unix**：`wait(object_list, timeout)` 几乎等价于 `select.select(object_list, [], [], timeout)`。不同之处在于，`select.select()` 可以被信号中断，抛出错误码为 `EINTR` 的 `OSError` 异常，而 `wait()` 不会。
+**Windows**：*object_list* 中的对象必须是一个可以等待的整数句柄（根据 Win32 函数 `WaitForMultipleObjects()` 使用文档中的定义）或者是一个带有 `fileno()` 方法（该方法返回一个套接字句柄或管道句柄）的对象。（注意管道句柄和套接字句柄是不是可等待的句柄。）
+
+版本 3.3 后添加。
 
 Examples
 下面的服务端代码创建了一个 listener，其使用 `secret_password` 作为秘钥。
@@ -1327,7 +1486,7 @@ if __name__ == '__main__':
 {% endcodeblock %}
 
 
-##### Address Formats #####
+##### <span id='2.10.1'>Address Formats</span> #####
 * `AF_INET` 地址是一个 `(hostname, port)` 格式的元组，*hostname* 是一个字符串，*port* 是一整数。
 * `AF_UNIX` 地址是代表文件系统中一个文件名字的字符串。
 * `AF_PIPE` 地址是一个 `r'\\.\pipe\PipeName` 形式的字符串。使用 `Client()` 连接到远程计算机中名为 *ServerName* 的管道应使用 `r'\\ServerName\pipe\PipeName` 替换。
@@ -1908,9 +2067,13 @@ if __name__ == '__main__':
 ```
 
 ### 后记 ###
+在完成内存优化工作的尾声才完成了这篇文档的翻译工作。原以为较为简单的工作，进行中发现读懂的基础上翻译为较为合适的中文还是有不小的难度及工作量的。
+首先，需要通读完成理解统一概念之后才能对整篇文档有所了解；其次，翻译过程中，很多细节的概念或不常见的参数还需要花费时间查阅资料或阅读源码；最终初稿完成的基础上仍需多次阅读校正（该步骤还未完成，因此欢迎大家支持本文翻译的不当之处或错误，感谢~）。因此还是花费了较长的时间编辑本篇文档。
+当然，该工作对自己了解 Python 的一些机制尤其是与进程相关的一些设计思路，功能考虑等有了更深的认知和理解，若有暇可在后续整理出来供大家参考，共同讨论和进步。
 
-On the way!
 
 #### 注 ####
-
 该篇博客参考文档为 Python 3.5.6 版本，源码版本为 CPython 3.5.2。
+
+#### 致谢 ####
+本篇工作的完成还来自很多朋友的支持和帮助，如僵尸进程，孤儿进程等相关资料来自于网上博客的参考，CSDN 平台的 [@逸辰杳](https://blog.csdn.net/u011675745/article/details/78604760)；不同系统平台的子进程开启方式部分受到同事 @权哥 [@Zhiya Zang](https://github.com/simpleapples) [@Mtax](https://github.com/mtax) 的帮助；以及更多同事朋友的支持帮助~再次感谢他们。
