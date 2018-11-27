@@ -81,7 +81,7 @@ Unix 与 Windows 环境均存在该方法，Windows 下默认使用该方法。
 父进程使用 `os.fork()` 复制 Python 解释器。子进程开始运行时实际是与父进程一样的。父进程的所有资源均会被子进程继承。注意拷贝一个多线程的进程可能会有问题。
 仅 Unix 环境存在该方法，Unix 默认使用该方法。
 * *forkserver*
-当程序开始运行并选择了 `forkserver` 方法，
+当程序开始运行并选择了 `forkserver` 方法，将开启一个服务进程。从此时起，每当需要一个新进程时，父进程将连接到服务进程并请求它复制一个新进场。服务进程是单线程的因此使用 `os.fork()` 更安全。不必要的资源不会被继承。
 仅支持 Unix 管道通信传输文件描述符的 Unix 平台支持该方法。
 
 在 3.4 版本之后，所有的 Unix 环境支持了`spawn` 方法，部分 Unix 环境支持了 `forkserver`  方法，Windows 环境下子进程不再继承父进程的所有可继承的句柄。
@@ -108,7 +108,7 @@ if __name__ == '__main__':
     p.join()
 {% endcodeblock %}
 
-程序中 `set_start_method()` 方法至多被使用一次，如像上述实例中，使用错误会报错
+程序中 `set_start_method()` 方法至多被使用一次，如像上述实例中，使用多次会报错
 
 {% codeblock %}
 RuntimeError: context has already been set.
@@ -126,14 +126,14 @@ RuntimeError: context has already been set.
 
 注：与 `context` 相关的对象可能与不同 `context` 的进程不兼容。特别是使用 `fork()` 方法的 `context` 创建的锁不能传递给使用 `spawn` 或 `forkserver` 方法启动的进程。
 
-使用特殊启动方法的库应该使用 `get_context()` 避免干扰库的使用者对启动方法的选择。
+使用特殊启动方式的库应该使用 `get_context()` 避免干扰库的使用者对启动方法的选择。
 
 #### 进程间信息交换 ####
 
 进程间 `multiprocessing` 支持两种类型的交流通道：`Queue` 和 `Pipe` 。
 
 ##### Queue ##### 
-`Queue` 是差不多克隆自 `queue.Queue`。代码实例如下
+`Queue` 差不多克隆自 `queue.Queue`。代码实例如下
 {% codeblock lang:python %}
 from multiprocessing import Process, Queue
 
@@ -220,7 +220,7 @@ if __name__ == '__main__':
 为了更灵活地使用内存共享，可以使用 `multiprocessing.sharedctypes` 模块，该模块支持从共享内存分配出来的任意 [ctypes](https://docs.python.org/3.5/library/ctypes.html) 对象。
 
 ##### 服务进程 #####
-`Manager()` 返回的 `manager` 对象管理一个服务器进程持有 Python 对象且允许其他进程使用代理操作这些对象，支持 `list`, `dict`, `Namespace`, `Lock`, `RLock`, `Semaphore`, `BoundedSemaphore`, `Condition`, `Event`, `Barrier`, `Queue`, `Value` 和 `Array`。代码示例如下
+`Manager()` 返回的 `manager` 对象管理一个服务进程持有 Python 对象且允许其他进程使用代理操作这些对象，支持 `list`, `dict`, `Namespace`, `Lock`, `RLock`, `Semaphore`, `BoundedSemaphore`, `Condition`, `Event`, `Barrier`, `Queue`, `Value` 和 `Array`。代码示例如下
 {% codeblock lang:python %}
 from multiprocessing import Process, Manager
 
@@ -318,15 +318,15 @@ multiprocessing.**Process**(group=None, target=None, name=None, args=(), kwargs=
 `Process` 对象表示另一个进程中的活动。`Process` 类具有 `threading.Thread` 的所有方法的等价方法。
 
 应该始终使用关键字参数调用构造函数。
-参数 `group` 应该始终是 `None`，它仅为了与 `threading.Thread` 构造参数一致。
-参数 `target` 是 `run()` 方法的调用函数，默认为 `None`，即不调用任何内容。
-参数 `name` 是进程的名字，详细情况见下参数部分。
-`kwargs` 是目标函数调用的参数关键字字典，若提供了该参数，将关键字参数 `daemon` 设置为 `True/False`，若为默认值 `None`，则从创建该进程的进程继承该参数。
-默认情况下，不会将任何参数传递给 `target`。
+参数 *group* 应该始终是 `None`，它仅为了与 `threading.Thread` 构造参数一致。
+参数 *target* 是 `run()` 方法的调用函数，默认为 `None`，即不调用任何内容。
+参数 *name* 是进程的名字，详细情况见下参数部分。
+参数 *kwargs* 是目标函数调用的参数关键字字典，若提供了该参数，将关键字参数 `daemon` 设置为 `True/False`，若为默认值 `None`，则从创建该进程的进程继承该参数。
+默认情况下，不会将任何参数传递给 *target*。
 
 如果子类重写构造函数，必须确保在对进程执行任何动作之前先调用 `Process.__init__()` 方法。
 
-3.3版本后添加了 `daemon` 参数。
+版本 3.3 后添加了 `daemon` 参数。
 
 {% note info %}
 构造函数源码如下所示。
@@ -351,24 +351,24 @@ def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
 {% endcodeblock %} 通过该函数我们可以清晰了解到进程的命名规则，如下有详细介绍。
 {% endnote %}
 
-**run()**
+**run**()
 表示进程动作（即进程的执行任务）的方法。
-分别按顺序使用 `args` 和 `kwargs` 参数中的关键字参数。
+分别按顺序使用 *args* 和 *kwargs* 参数中的关键字参数。
 
-**start()**
+**start**()
 进程启动的方法。
 该方法在每一个进程中至多被调用一次，其在一个单独进程中调用 `Process` 对象的 `run()` 方法。
 
-**join([timeout])**
-若可选参数 `timeout` 为 `None` （默认为 `None` ），该方法会阻塞进程直至调用该方法的进程终止；
-若可选参数 `timeout` 为整数，该方法会阻塞进程 `timeout` 秒；
+**join**([*timeout*])
+若可选参数 *timeout* 为 `None` （默认值），该方法会阻塞进程直至调用该方法的进程终止；
+若可选参数 *timeout* 为整数 N，该方法会阻塞进程 N 秒；
 注：若方法进程终止或超时，返回 `None`。可以通过检查进程的 `exitcode` 属性值确认进程是否终止。
 
 **name**
 进程名称。`name` 是字符串类型，仅用于识别目的，没有语义。多个进程可以使用相同的名字。
 初识名字由构造器设置，若构造器没有提供显示名字，按照 "Process-{N<sub>1</sub>:N<sub>2</sub>:...:N<sub>k</sub>}" 形式构造名字，其中 "N<sub>k</sub>" 表示父进程的第 N<sub>k</sub> 个子进程。
 
-**is_alive()**
+**is_alive**()
 返回进程是否活着。
 粗略的说，从进程调用 `start()` 方法到进程终止之间进程状态时活着的。
 
@@ -400,7 +400,7 @@ def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
 一次等待多个事件时可以使用 `multiprocessing.connection.wait()`，否则使用 `join()` 方法会更简单。
  Windows 环境下这是一个系统句柄调用 `WaitForSingleObject` 和 `WaitForMultipleObjects` API 族；Unix 环境下是一个文件描述符，与 `select` 模块中的原语配合使用。
 
-**terminate()**
+**terminate**()
 终止进程。Unix 环境下使用 `SIGTERM` 信号量完成；Windows 环境下调用 `TerminatedProcess()` 方法实现。但不会执行退出句柄和剩余子句。
 注：进程的后裔进程不会被终止，后裔进程将称为孤儿进程。
 {% note warning %} 警告：如果相互关联的进程正在使用管道或队列时，调用了该方法，管道或队列可能会被损毁且无法被其他进程使用。类似的，如果进程已获得了锁或者信号量，终止它可能导致其他进程的死锁。{% endnote %}
@@ -534,9 +534,9 @@ multiprocessing.**Queue**([*maxsize*])
 
 **put**(*obj*[, *block*[, *timeout*]])
 将对象放入队列。
-若可选参数 `block` 是 `True`（默认值）且 `timeout` 参数为 `None`（默认值），若没有空间插入对象会发生阻塞直到可以插入对象 。若 `timeout` 参数是一个正整数 N，其会至多阻塞 N 秒还没有空间可以插入时抛出 `queue.Full`
+若可选参数 *block* 是 `True`（默认值）且 *timeout* 参数为 `None`（默认值），若没有空间插入对象会发生阻塞直到可以插入对象 。若 *timeout* 参数是一个正整数 N，其会至多阻塞 N 秒还没有空间可以插入时抛出 `queue.Full`
 异常。
-若可选参数 `block` 是 `False` 会直接向队列中放入元素，若没有空间直接抛出 `queue.Full` 异常（该情况下 `timeout` 参数被忽略）。
+若可选参数 *block* 是 `False` 会直接向队列中放入元素，若没有空间直接抛出 `queue.Full` 异常（该情况下 *timeout* 参数被忽略）。
 
 **put_nowait**(*obj*)
 等价于 `put(obj, False)` 方法。
@@ -643,7 +643,7 @@ multiprocessing.**get_context**(*method=None*)
 
 multiprocessing.**get_start_method**(*allow_none=False*)
 返回启动进程方式的名称。
-若 `start()` 方式未确定且参数 `allow_none` 是 `False`，`start()` 启动方式被设置为默认值并返回默认方式的名称。若 `start()` 方式没有被确定且参数 `allow_none` 是 `True` 返回 `None`。
+若 `start()` 方式未确定且参数 *allow_none* 是 `False`，`start()` 启动方式被设置为默认值并返回默认方式的名称。若 `start()` 方式没有被确定且参数 *allow_none* 是 `True` 返回 `None`。
 返回值可以是 `fork`，`spawn`，`forkserver` 或 `None`。Unix 默认 `fork`，Windows 默认 `spawn`。
 版本 3.4 后添加。
 
@@ -683,23 +683,23 @@ multiprocessing.**set_start_method**(*method*)
 
 **poll**([*timeout*])
 返回是否有可以被读取的数据。
-若 `timeout` 没有指定，则立即返回；若 `timeout` 是数字 N，则指定阻塞的时间最长为 N 秒；若 `timeout` 为 `None`，则阻塞的时间为无限长。
+若 *timeout* 没有指定，则立即返回；若 *timeout* 是数字 N，则指定阻塞的时间最长为 N 秒；若 *timeout* 为 `None`，则阻塞的时间为无限长。
 注：可以使用 `multiprocessing.connection.wait()` 方法一次轮训多个连接对象。
 
 **send_bytes**(*buffer*[, *offset*[, *size*])
 将字节类型对象作为完整消息发送。
-若设置了 `offset` 参数将会缓存中该偏移位置读取数据。
-若设置了 `size` 参数将会从缓存中读取多个字节。
+若设置了 *offset* 参数将会缓存中该偏移位置读取数据。
+若设置了 *size* 参数将会从缓存中读取多个字节。
 太大的缓存区（约为 32MB+，取决于操作系统）可能抛出 `ValueError` 异常。
 
 **recv_bytes**([*maxlength*])
 将从连接另一端发送的字节类型的数据对象作为字符串返回。阻塞至有数据对象收到。若没有剩余可接收数据对象且连接发送端已经关闭会抛出 `EOFError` 异常。
-若指定了 `maxlength` 参数且消息对象的长度大于该参数数值，将抛出 `OSError` 异常，且该连接不再可读。
+若指定了 *maxlength* 参数且消息对象的长度大于该参数数值，将抛出 `OSError` 异常，且该连接不再可读。
 版本 3.3 后变更：该方法引发的 `IOError` 异常是 `OSError` 异常的别称。
 
 **recv_bytes_into**(*buffer*[, *offset*])
 读入从连接发送端发送的字节类型数据对象完整消息并返回数据对象的字节数。阻塞至有数据对象收到。若没有剩余可接收数据对象且连接发送端已经关闭会抛出 `EOFError` 异常。
-参数 `buffer` 必须是可写的字节类型对象。若给定 `offset` 参数，将会从缓存中该偏移位置写入数据，该参数是小于 `buffer` 长度的非负整数。
+参数 *buffer* 必须是可写的字节类型对象。若给定 *offset* 参数，将会从缓存中该偏移位置写入数据，该参数是小于 *buffer* 长度的非负整数。
 若缓冲区太小会引发 `BufferTooShort` 异常，且完整的消息可以从异常实例 `e.args[0]` 获取。
 {% endblockquote %}
 
@@ -745,7 +745,7 @@ MacOSX 系统上该对象与 `Semaphore` 无法区分，因为该平台未实现
 
 *class* multiprocessing.**Condition**([*lock*])
 类似于 `threading.Condition` 的条件变量。
-若指定了 `lock` 参数，参数应该是来自 `multiprocessing` 模块的 `Lock` 或 `RLock` 对象实例。
+若指定了 *lock* 参数，参数应该是来自 `multiprocessing` 模块的 `Lock` 或 `RLock` 对象实例。
 版本 3.3 后添加了 `wait_for()` 方法。
 
 *class* multiprocessing.**Event**
@@ -758,9 +758,9 @@ MacOSX 系统上该对象与 `Semaphore` 无法区分，因为该平台未实现
 
 **acquire**(*block=True, timeout=None*)
 获取一个阻塞/非阻塞的锁。
-`block` 参数被设置为 `True`（默认值）该方法会阻塞至锁处于解锁状态，将其设置为上锁状态返回 `True`。注意此处第一个参数的名字与 `threading.Lock.acquire()` 方法中的第一个参数名字不同。
-若 `block` 参数设置为 `False`，该方法不会阻塞。若锁被上锁，返回 `Fasle`，否则将锁上锁返回 `True`。
-当使用正的浮点型数值 F 设置 `timeout` 参数时，其阻塞至获得锁的最长等待时间 F 秒。F 为负数时等效于为 0 的调用。若该参数设置为 `None`（默认值），即阻塞时间没有上限。注意此处对超时的负值或 `None` 的表现形式已与 `threading.Lock.acquire()` 不同。若 `block` 参数被设置为 `False` 该参数因没有实际意义将被忽略。若获得锁返回 `True` 否则阻塞时间超时时返回 `False`。
+*block* 参数被设置为 `True`（默认值）该方法会阻塞至锁处于解锁状态，将其设置为上锁状态返回 `True`。注意此处第一个参数的名字与 `threading.Lock.acquire()` 方法中的第一个参数名字不同。
+若 *block* 参数设置为 `False`，该方法不会阻塞。若锁被上锁，返回 `Fasle`，否则将锁上锁返回 `True`。
+当使用正的浮点型数值 F 设置 *timeout* 参数时，其阻塞至获得锁的最长等待时间 F 秒。F 为负数时等效于为 0 的调用。若该参数设置为 `None`（默认值），即阻塞时间没有上限。注意此处对超时的负值或 `None` 的表现形式已与 `threading.Lock.acquire()` 不同。若 *block* 参数被设置为 `False` 该参数因没有实际意义将被忽略。若获得锁返回 `True` 否则阻塞时间超时时返回 `False`。
 
 **release**()
 解锁。该方法不仅可以由当前占有锁的进程/线程调用，也可以由其他进程/线程调用。
@@ -775,9 +775,9 @@ MacOSX 系统上该对象与 `Semaphore` 无法区分，因为该平台未实现
 
 **acquire**(*block=True, timeout=None*)
 获取一个阻塞/非阻塞的锁。
-`block` 参数被设置为 `True`（默认值）该方法会阻塞至锁处于解锁状态，除非锁被当前进程/线程所有。当前进程/线程获得了锁的所有权（若之前还没有所有权），锁的内部递归级别加一并返回 `True`。注意，与 `threading.RLock.acquire()` 的实现相比，第一个参数名称不同，这里是函数本身。
-参数 `block` 设置为 `False` 时不阻塞。若锁已经被另一个进程/线程获取（即拥有），则当前进程/线程不会获得所有权，锁的内部递归级别也不会更改，返回 `False`。若锁处于解锁状态，则当前进程/线程获取锁的所有权且锁的内部递归级别加一，返回 `True`。
-`timeout` 参数的用法和行为与 `Lock.acquire()` 相同。注意，这里的超时行为与 `threading.RLock.acquire()` 的实际表现略有不同。
+*block* 参数被设置为 `True`（默认值）该方法会阻塞至锁处于解锁状态，除非锁被当前进程/线程所有。当前进程/线程获得了锁的所有权（若之前还没有所有权），锁的内部递归级别加一并返回 `True`。注意，与 `threading.RLock.acquire()` 的实现相比，第一个参数名称不同，这里是函数本身。
+参数 *block* 设置为 `False` 时不阻塞。若锁已经被另一个进程/线程获取（即拥有），则当前进程/线程不会获得所有权，锁的内部递归级别也不会更改，返回 `False`。若锁处于解锁状态，则当前进程/线程获取锁的所有权且锁的内部递归级别加一，返回 `True`。
+*timeout* 参数的用法和行为与 `Lock.acquire()` 相同。注意，这里的超时行为与 `threading.RLock.acquire()` 的实际表现略有不同。
 
 **release**()
 释放锁并将内部递归级别减一。在锁的递归级别变为零后，解锁（锁不为任何进程/线程拥有）。若有其他进程/线程在阻塞等待该锁，仅允许其中一个获得锁的所有权。若递归级别不为零，则锁保持上锁状态，并由当前调用进程/线程拥有。
@@ -786,9 +786,9 @@ MacOSX 系统上该对象与 `Semaphore` 无法区分，因为该平台未实现
 
 *class* multiprocessing.Semaphore([*value*])
 类似于 `threading.Semaphore` 的信号量对象。
-差异在于其 `acquire` 方法的第一个参数名是与 `Lock.acquire()` 一样的 `block`。
+差异在于其 `acquire` 方法的第一个参数名是与 `Lock.acquire()` 一样的 *block*。
 {% note info %}
-注：MacOS X 系统不支持 `sem_timedwait` 函数，因此带有 `timeout` 参数调用 `acquire()` 方法将使用休眠循环模拟该行为。
+注：MacOS X 系统不支持 `sem_timedwait` 函数，因此带有 *timeout* 参数调用 `acquire()` 方法将使用休眠循环模拟该行为。
 {% endnote %} {% note info %}注：若 `Ctrl-C` 信号量到达，而主线程在调用 `BoundedSemaphore.acquire()`、`Lock.acquire()`、`RLock.acquire()`、`Semaphore.acquire()`、`Condition.acquire()` 或 `Condition.wait()` 产生阻塞，会立即中断并抛出 `KeyboardInterrupt` 异常。
 这里与 `threading` 模块中行为不同，`threading` 模块会忽略 SIGINT 信号。
 {% endnote %}{% note info %}
@@ -800,7 +800,7 @@ MacOSX 系统上该对象与 `Semaphore` 无法区分，因为该平台未实现
 
 multiprocessing.**Value**(*typecode_or_type*, **args*, *lock=True*)
 {% blockquote %}
-返回从共享内存中分配的 ctypes 对象。默认返回的实际是对象的同步包装器。可以通过 `Value` 的 `value` 属性获取对象本身。
+返回从共享内存中分配的 ctypes 对象。默认返回的实际是对象的同步包装器。可以通过 `Value` 的 *value* 属性获取对象本身。
 *typecode_or_type* 决定了返回对象的类型：它是 ctypes 类型或是由 `array` 模块使用的类型字符串。 **args* 被传递给对应类型的构造函数。
 若参数 *lock* 为 `True`（默认值），会创建一个递归锁以同步对该值的访问。如果 *lock* 是 `Lock` 或 `RLock` 对象类型，将用于对同步值权限的保护。若 *lock* 是 `False`，则锁不会自动保护对返回对象的访问，因此将不是进程安全的。
 例如像 `+=` 这样涉及读写的操作不是原子性的。因此，想以原子性方式递增共享值仅以如下方式将不能实现。
@@ -845,7 +845,7 @@ multiprocessing.sharedctypes.**RawValue**(*typecode_or_type*, **args*)
 
 注：读写元素是非原子性的 - 使用 `Value()` 通过锁确保其实原子性的。
 
-注：`ctypes.c_char` 数组具有 `value` he  `raw` 属性，可以通过该属性存储和检索字符串。
+注：`ctypes.c_char` 数组具有 `value` 和  `raw` 属性，可以通过该属性存储和检索字符串。
 {% endblockquote %}
 
 multiprocessing.sharedctypes.**Array**(*typecode_or_type*, *size_or_initializer*, *, *lock=True*)
@@ -940,14 +940,14 @@ Multiprocessing.**Manager()**
 `manager` 进程一旦被垃圾回收或其父进程退出就会关闭。`manager` 类的定义位于 `multiprocessing.managers` 模块。
 {% endblockquote %}
 
-multiprocessing.managers.**BaseManager**([address[, authkey]])
+multiprocessing.managers.**BaseManager**([*address*[, *authkey*]])
 {% blockquote %}
 创建 `BaseManager` 对象。
 创建后应该调用 `start()` 或 `get_server().serve_forever()` 方法保证 `manager` 对象引用的进程开启。
 *address* 是 `manager` 进程监听的新连接的地址，若该参数为 `None` 则系统随机分配一个对应于某些空闲端口号的地址。
 *authkey* 身份认证密钥，用于检查连接到服务进程的有效性。若该参数为 `None` 则使用 `current_process().authkey`。若使用该参数，其类型是 byte 字符串类型。
 
-**start**([initializer[, initargs]])
+**start**([*initializer*[, *initargs*]])
 `manager` 开启子进程。若构造函数不为空，启动时调用构造函数 `initializer(*initargs)`。
 
 **get_server**()
@@ -957,7 +957,7 @@ from multiprocessing.managers import BaseManager
 manager = BaseManager(address=('', 50000), authkey=b'abc')
 server = manaager.get_server()
 server.serve_forever()
-{% endcodeblock %}`Server` 类型具有 `address` 属性，由 `manager` 对象使用的地址。
+{% endcodeblock %} `Server` 类型具有 `address` 属性，由 `manager` 对象使用的地址。
 
 **Connect**()
 连接一个本地的 `manager` 对象到远程 `manager` 进程。
@@ -971,8 +971,8 @@ m.connect()
 终止 `manager` 进程。该方法只有在服务进程执行过 `start()` 方法后才有效。
 该方法可以被多次调用。
 
-<span id='basemanager.register'>**register**(typeid[, callable[, proxytype[, exposed[, method_to_typeid[, create_method]]]]])</span>
-classmethod，用于注册类型或调用 `manager`。
+<span id='basemanager.register'>**register**(*typeid*[, *callable*[, *proxytype*[, *exposed*[, *method_to_typeid*[, *create_method*]]]]])</span>
+类方法，用于注册类型或调用 `manager`。
 
 *typeid* 是类型标识符，用于识别共享对象的类型，字符串类型。
 
@@ -1002,13 +1002,13 @@ multiprocessing.managers.**SyncManager**
 `BaseManager` 的子类，用于进程间同步。`multiprocessing.Manager()` 返回的对象类型。
 同样支持创建共享 List 和 Dict。
 
-**Barrier**(parties[, action[, timeout]])
+**Barrier**(*parties*[, *action*[, *timeout*]])
 创建共享 `threading.Barrier` 对象并返回其代理。3.3 版本后引入。
 
-**BoundedSemaphore**([value])
+**BoundedSemaphore**([*value*])
 创建共享 `threading.BoundedSemaphore` 对象并返回其代理。
 
-**Condition**([lock])
+**Condition**([*lock*])
 创建共享 `threading.Condition` 对象并返回其代理。
 若创建的共享对象类型包含 `lock`则返回值是 `threading.Lock` 或 `threading.RLock` 对象。
 3.3 版本后添加了 `wait_for()` 方法。
@@ -1022,25 +1022,25 @@ multiprocessing.managers.**SyncManager**
 **Namespace**()
 创建共享 `Namespace` 对象并返回其代理。
 
-**Queue**([maxsize])
+**Queue**([*maxsize*])
 创建共享 `queue.Queue` 对象并返回其代理。
 
 **RLock**()
 创建共享 `threading.RLock` 对象并返回其代理。
 
-**Semaphore**([value])
+**Semaphore**([*value*])
 创建共享 `threading.Semaphore` 对象并返回其代理。
 
-**Array**(typecode, sequence)
+**Array**(*typecode*, *sequence*)
 创建一个 Array 并返回其代理。
 
-**Value**(typecode, value)
+**Value**(*typecode*, *value*)
 创建带有可写属性 `value` 的对象并返回其代理。
 
-**dict**() & **dict**(mapping) & **dict**(sequence)
+**dict**() & **dict**(*mapping*) & **dict**(*sequence*)
 创建共享 `dict` 对象并返回其代理。
 
-**list**() & **list**(sequence)
+**list**() & **list**(*sequence*)
 创建共享 `list` 对象并返回其代理。
 注：对 dict 或 list 的代理中可变值或可变项的修改可能不会通过 `manager` 传播，因为代理无法知道其值或项在何时被修改的。因此，要修改此类值或项，需要将修改后的对象重新赋值给 `manager` 包含的代理。
 {% codeblock lang:python %}
@@ -1208,9 +1208,13 @@ print(a, b)
 调用引用对象方法并返回执行结果。
 `proxy` 是一个引用对象是 `obj` 的代理，表达式
 {% codeblock lang:python %}proxy._callmethod(methodname, args, kwds){% endcodeblock %} 等价于 manager 进程中的表达式 {% codeblock lang:python %}getattr(obj, methodname)(*args, **kwds){% endcodeblock %}
-返回值是调用结果的拷贝或者新共享对象的代理 - *method_to_typeid* 参数参阅 [`BaseManager.register()`](basemanager.register) 文档。
+
+返回值是调用结果的拷贝或者新共享对象的代理 - *method_to_typeid* 参数参阅 [BaseManager.register()](#basemanager.register)。
+
 若调用引发异常，将由 `_call_method` 方法重新引发该异常。若在 manger 进程中引发了其他异常，将其转换为 `RemoteError` 异常并由 `_callmethod()` 引发。
+
 特别注意：若参数 *methodname* 是引用对象的非公开方法将抛出异常。
+
 使用该方法的代码实例。
 {% codeblock lang:python %}
 l = manager.list(range(10))
@@ -1243,7 +1247,7 @@ l._callmethod('__getitem__', (20,))          # equivalent to l[20]
 #### Process Pool ####
 创建进程池，可以执行使用 `Pool` 类提交给它的任务。
 
-class multiprocessing.pool.Pool([processes[, initializer[, initargs[, maxtasksperchild[, context]]]]])
+class multiprocessing.pool.**Pool**([*processes*[, *initializer*[, *initargs*[, *maxtasksperchild*[, *context*]]]]])
 {% blockquote %}
 进程池对象，可以控制提交任务的工作进程池，支持异步获取超时或回调结果，具有并行映射的实现。
 *processes* 是使用的工作进程数量。若该参数为 `None` 使用 `os.cpu_count()` 返回的数字。
@@ -2076,4 +2080,4 @@ if __name__ == '__main__':
 该篇博客参考文档为 Python 3.5.6 版本，源码版本为 CPython 3.5.2。
 
 #### 致谢 ####
-本篇工作的完成还来自很多朋友的支持和帮助，如僵尸进程，孤儿进程等相关资料来自于网上博客的参考，CSDN 平台的 [@逸辰杳](https://blog.csdn.net/u011675745/article/details/78604760)；不同系统平台的子进程开启方式部分受到同事 @权哥 [@Zhiya Zang](https://github.com/simpleapples) [@Mtax](https://github.com/mtax) 的帮助；以及更多同事朋友的支持帮助~再次感谢他们。
+本篇工作的完成还来自很多朋友的支持和帮助，如僵尸进程，孤儿进程等相关资料来自于网上博客的参考，CSDN 平台的 [@逸辰杳](https://blog.csdn.net/u011675745/article/details/78604760)；不同系统平台的子进程开启方式部分受到同事 [@linquanisaac](https://github.com/linquanisaac) [@Zhiya Zang](https://github.com/simpleapples) [@Mtax](https://github.com/mtax) 的帮助；以及更多同事朋友的支持帮助~再次感谢他们。
