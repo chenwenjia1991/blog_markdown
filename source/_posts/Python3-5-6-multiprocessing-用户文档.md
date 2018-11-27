@@ -1170,7 +1170,6 @@ s.serve_forever()
 ```
 
 #### Proxy ####
-
 On the way!
 
 *class* multiprocessing.managers.**BaseProxy**
@@ -1183,9 +1182,150 @@ On the way!
 
 #### Process Pool ####
 On the way!
+class multiprocessing.pool.Pool([processes[, initializer[, initargs[, maxtasksperchild[, context]]]]])
+{% blockquote %}
+On the way!
+{% endblockquote %}
+
+class multiprocessing.pool.AsyncResult
+{% blockquote %}
+On the way!
+{% endblockquote %}
+
+下面的实例说明如何使用 `Pool`。
+{% codeblock lang:python %}
+from multiprocessing import Pool
+import time
+
+def f(x):
+    return x*x
+
+if __name__ == '__main__':
+    # start 4 worker processes
+    with Pool(processes=4) as pool:
+        # evaluate "f(10)" asynchronously in a single process
+        result = pool.apply_async(f, (10,))
+
+        # prints "100" unless your computer is *very* slow
+        print(result.get(timeout=1))
+        
+        # prints "[0, 1, 4,..., 81]"
+        print(pool.map(f, range(10)))
+        # prints "[0, 1, 4,..., 81]"
+
+        it = pool.imap(f, range(10))
+        # prints "0"
+        print(next(it))
+
+        # prints "1"
+        print(next(it))
+
+        # prints "4" unless your computer is *very* slow
+        print(it.next(timeout=1))
+
+        result = pool.apply_async(time.sleep, (10,))
+        # raises multiprocessing.TimeoutError
+        print(result.get(timeout=1))
+{% endcodeblock %}
 
 #### <span id='2.10'>Listener && Client</span> ####
+通常进程间传递消息使用队列或由 `Pipe()` 方法返回的 `Connection` 对象。
+
+此外，`multiprocessing.connection` 模块有更多的灵活性。它可以处理来自处理套接字或者 Windows 管道等 API 的更高级别消息。同样支持使用 `hmac` 模块进行数字认证，支持同时轮询多个连接。
+
+multiprocessing.connection.**deliver_challenge**(*connection*, *authkey*)
+向另一端发送一个随机产生的消息并等待回复。
+若返回的回复使用秘钥作为键匹配数字认证，则向另一端发送欢迎消息。否则抛出 `AuthenticationError` 异常。
+
+multiprocessing.connection.**answer_challenge**(*connection*, *authkey*)
 On the way!
+
+multiprocessing.connection.**Client**(*address*[, *family*[, *authenticate*[, *authkey*]]])
+On the way!
+
+class multiprocessing.connection.**Listener**([*address*[, *family[*, *backlog*[, *authenticate*[, *authkey*]]]]])
+On the way!
+{% blockquote %}
+
+**accept**()
+On the way!
+
+**close**()
+On the way!
+
+**address**
+On the way!
+
+**last_accepted**
+On the way!
+
+{% endblockquote %}
+
+multiprocessing.connection.**wait**(*object_list*, *timeout=None*)
+On the way!
+
+
+Examples
+下面的服务端代码创建了一个 listener，其使用 `secret_password` 作为秘钥。
+之后等待连接并向客户端发送数据。
+{% codeblock lang:python %}
+from multiprocessing.connection import Listener
+from array import array
+
+address = ('localhost', 6000)     # family is deduced to be 'AF_INET'
+
+with Listener(address, authkey=b'secret password') as listener:
+    with listener.accept() as conn:
+        print('connection accepted from', listener.last_accepted)
+        conn.send([2.25, None, 'junk', float])
+        conn.send_bytes(b'hello')
+        conn.send_bytes(array('i', [42, 1729]))
+{% endcodeblock %} 下面的代码代表客户端连接到服务端并从服务端接收数据。
+{% codeblock lang:python %}
+from multiprocessing.connection import Client
+from array import array
+
+address = ('localhost', 6000)
+
+with Client(address, authkey=b'secret password') as conn:
+    print(conn.recv())                  # => [2.25, None, 'junk', float]
+    print(conn.recv_bytes())            # => 'hello'
+    arr = array('i', [0, 0, 0, 0, 0])
+    print(conn.recv_bytes_into(arr))    # => 8
+    print(arr)                          # => array('i', [42, 1729, 0, 0, 0])
+{% endcodeblock %} 下面的代码使用 `wait()` 方法同时等待来自多个进程的消息。
+{% codeblock lang:python %}
+import time, random
+from multiprocessing import Process, Pipe, current_process
+from multiprocessing.connection import wait
+
+def foo(w):
+    for i in range(10):
+        w.send((i, current_process().name))
+    w.close()
+
+if __name__ == '__main__':
+    readers = []
+    for i in range(4):
+        r, w = Pipe(duplex=False)
+        readers.append(r)
+        p = Process(target=foo, args=(w,))
+        p.start()
+        # We close the writable end of the pipe now to be sure that
+        # p is the only process which owns a handle for it.  This
+        # ensures that when p closes its handle for the writable end,
+        # wait() will promptly report the readable end as being ready.
+        w.close()
+    while readers:
+        for r in wait(readers):
+            try:
+                msg = r.recv()
+            except EOFError:
+                readers.remove(r)
+            else:
+                print(msg)
+{% endcodeblock %}
+
 
 ##### Address Formats #####
 * `AF_INET` 地址是一个 `(hostname, port)` 格式的元组，*hostname* 是一个字符串，*port* 是一整数。
