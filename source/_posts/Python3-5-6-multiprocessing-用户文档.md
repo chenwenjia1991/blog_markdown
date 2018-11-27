@@ -81,7 +81,7 @@ Unix 与 Windows 环境均存在该方法，Windows 下默认使用该方法。
 父进程使用 `os.fork()` 复制 Python 解释器。子进程开始运行时实际是与父进程一样的。父进程的所有资源均会被子进程继承。注意拷贝一个多线程的进程可能会有问题。
 仅 Unix 环境存在该方法，Unix 默认使用该方法。
 * *forkserver*
-当程序开始运行并选择了 `forkserver` 方法，将开启一个服务进程。从此时起，每当需要一个新进程时，父进程将连接到服务进程并请求它复制一个新进场。服务进程是单线程的因此使用 `os.fork()` 更安全。不必要的资源不会被继承。
+当程序开始运行并选择了 `forkserver` 方法，将开启一个服务进程。从此时起，每当需要一个新进程时，父进程将连接到服务进程并请求它复制一个新进程。服务进程是单线程的因此使用 `os.fork()` 更安全。不必要的资源不会被继承。
 仅支持 Unix 管道通信传输文件描述符的 Unix 平台支持该方法。
 
 在 3.4 版本之后，所有的 Unix 环境支持了`spawn` 方法，部分 Unix 环境支持了 `forkserver`  方法，Windows 环境下子进程不再继承父进程的所有可继承的句柄。
@@ -312,7 +312,7 @@ p.map(f, [1,2,3])
 `multiprocessing` 模块主要复制了 `threading` 模块的 API。
 
 #### Process && Exceptions ####
-multiprocessing.**Process**(group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None)
+multiprocessing.**Process**(*group=None*, *target=None*, *name=None*, *args=()*, *kwargs={}*, ***, *daemon=None*)
 
 {% blockquote %}
 `Process` 对象表示另一个进程中的活动。`Process` 类具有 `threading.Thread` 的所有方法的等价方法。
@@ -326,7 +326,7 @@ multiprocessing.**Process**(group=None, target=None, name=None, args=(), kwargs=
 
 如果子类重写构造函数，必须确保在对进程执行任何动作之前先调用 `Process.__init__()` 方法。
 
-版本 3.3 后添加了 `daemon` 参数。
+版本 3.3 后添加了 *daemon* 参数。
 
 {% note info %}
 构造函数源码如下所示。
@@ -393,7 +393,7 @@ def __init__(self, group=None, target=None, name=None, args=(), kwargs={},
  **authkey**
 程序的身份认证秘钥是一个 byte 类型的字符串。
 `multiprocessing` 初始化时，会使用 `os.urandom()` 方法为主进程分配一个随机字符串。
-当创建 `Process` 对象时，它会继承父进程的 `authkey`，可以通过设置 `authkey` 来改变它。
+当创建 `Process` 对象时，它会继承父进程的 *authkey*，可以通过设置 *authkey* 来改变它。
 
 **sentinel**
 系统对象的数字句柄，当进程结束时状态变为 ready。
@@ -638,7 +638,7 @@ multiprocessing.**get_all_start_methods**()
 
 multiprocessing.**get_context**(*method=None*)
 返回与 `multiprocessing` 模块相同属性的 `context` 对象。
-若参数 `method` 为 `None`，返回默认 `context`；否则参数 `method` 应该为 `fork`，`spawn`，`forkserver`。若 `start()` 的方式系统不支持会抛出 `ValueError` 异常。
+若参数 *method* 为 `None`，返回默认 `context`；否则参数 *method* 应该为 `fork`，`spawn`，`forkserver` 中一个。若 `start()` 的方式系统不支持会抛出 `ValueError` 异常。
 版本 3.4 后添加。
 
 multiprocessing.**get_start_method**(*allow_none=False*)
@@ -767,7 +767,7 @@ MacOSX 系统上该对象与 `Semaphore` 无法区分，因为该平台未实现
 除在未上锁的锁上调用该方法引发 `ValueError` 异常外，其行为与 `threading.Lock.release()` 一致。
 {% endblockquote %}
 
-*class* multiprocessing.RLock
+*class* multiprocessing.**RLock**
 {% blockquote %}
 类似于 `threading.RLock` 的递归锁。递归锁必须由获取它的进程/线程释放它。一旦进程/线程已经获取了它，同一进程/线程可以不阻塞的再次获得它；该进程/线程每次获取它均需要释放。
 注意 `RLock` 实际上是一个工厂函数，其返回使用默认上下文初始化的 `multiprocessing.synchronize.RLock` 实例。
@@ -1564,7 +1564,7 @@ del m
 若代理对象来自多个线程，应该使用锁进行保护。（确保使用同一个代理的不同进程不会出现问题）
 
 4. 僵尸进程的 `join()` 方法
-Unix 中，当一个子进程完成退出没有调用 `join()` 方法而父进程在继续运行时，子进程成为僵尸进程。因为每一个新进程 `start()` （或调用 `active_children()` 方法），所有没有调用 `join()` 方法的终止进程将会 `join()`，所以僵尸进程的数量不会特别多。同事，调用一个已终止进程的 `Process.is_alive` 将会调用 `join()` 方法。即使如此，开始时明确进程的执行流程也是一个好习惯。
+Unix 中，当一个子进程完成退出没有调用 `join()` 方法而父进程在继续运行时，子进程成为僵尸进程。因为每一个新进程 `start()` （或调用 `active_children()` 方法），所有没有调用 `join()` 方法的终止进程将会 `join()`，所以僵尸进程的数量不会特别多。同时，调用一个已终止进程的 `Process.is_alive` 将会调用 `join()` 方法。即使如此，开始时明确进程的执行流程也是一个好习惯。
 {% note info %}
 **个人解读**
 `join()` 方法具有清除僵尸进程的作用。通过下述源码我们可以发现，该方法通过子父进程的串行进程执行方式清除僵尸进程。`join()` 方法主要做了两件事情：① 通知父进程调用 `wait()` 方法；② 等待子进程终止或超时后，移除子进程。不带参数的 `join()` 方法
