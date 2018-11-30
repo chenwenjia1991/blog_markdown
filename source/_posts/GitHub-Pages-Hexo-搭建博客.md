@@ -2,12 +2,12 @@
 title: GitHub Pages + Hexo 搭建博客
 date: 2018-11-01 08:29:03
 categories:
-- "DevelopTools"
+- DevelopTools
 tags:
-- "GitHub"
-- "Hexo"
-- "NexT"
-- "博客"
+- GitHub
+- Hexo
+- NexT
+- 博客
 ---
 
 在决定写博客之后，我们首要面临的问题就是如何完成个人博客的初始化工作。此处，个人选择了 GitHub Pages + Hexo 的博客搭建方案。对博客方案选择过程有兴趣的或者有自身明确需求的读客可以阅读 [博客的需求](#1) 和 [博客搭建的选择](#2) 两部分以决定是否阅读[本博客的方案](#3)，若决定使用与本博客同样的解决方案，可以直接阅读[本博客的方案](#3)。
@@ -309,6 +309,30 @@ skip_render:  # 跳过指定文件的渲染，可使用 glob表达式来匹配�
 ```
 
 Tips: 刚接触 Hexo，此部分一般不做修改。
+
+###### 文章 ######
+
+{% codeblock lang:yaml %}
+# Writing
+# 新文章的文件名称，此处修改问 年-月-日-title.md 的方式方便检索
+new_post_name: :year-:month-:day-:title.md # File name of new posts
+# 预设布局
+default_layout: post
+# 中英文间加入空格 - 建议文章中自己添加
+titlecase: false # Transform title into titlecase
+external_link: true # Open external links in new tab
+filename_case: 0
+render_drafts: false
+post_asset_folder: false
+relative_link: false
+future: true
+#  代码块设置
+highlight:
+  enable: true
+  line_number: true
+  auto_detect: false
+  tab_replace:
+{% endcodeblock %}
 
 ###### 分类 & 标签
 
