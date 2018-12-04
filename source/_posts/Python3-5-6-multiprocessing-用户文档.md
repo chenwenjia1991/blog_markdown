@@ -55,8 +55,8 @@ import os
 
 def info(title):
     print(title)
-    prinnt('module name:', __name__)
-    print('parent process:', os.getpid())
+    print('module name:', __name__)
+    print('parent process:', os.getppid())
     print('process id:', os.getpid())
 
 def f(name):
