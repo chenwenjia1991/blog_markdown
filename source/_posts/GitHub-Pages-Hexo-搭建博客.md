@@ -732,17 +732,21 @@ print("Hello World!")
 {% endcodeblock %}
 {% endblockquote %}
 注：Hexo quote 中引用代码块，注意其 Markdown 解析器的不一致。
-```
-
+``` 
 {% blockquote %}
 上述代码在 Quote 中效果如下
 {% codeblock lang:python %}
 # test for code in quote
 print("Hello World!")
 {% endcodeblock %}
-
 注：Hexo quote 中引用代码块，注意其解析的不一致。
 {% endblockquote %}
+渲染器更换后，其渲染器配置改为在 '_config.yml' 文件的 `kramed` 域中进行。默认开启的智能引号转换在中文环境下会将英文引号自动转换为中文的，若不期望该行为发生，配置修改如下。参考 [Hexo Issuer 1981](https://github.com/hexojs/hexo/issues/1981)。
+{% codeblock lang:yaml %}
+# Kramed config
+kramed:
+  smartypants: false
+{% endcodeblock %}
 
 ### 后记 ###
 

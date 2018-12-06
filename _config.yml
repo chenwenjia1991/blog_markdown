@@ -90,4 +90,7 @@ search:
   format: html
   limit: 10000
 
+# Kramed config
+kramed:
+  smartypants: false
 
