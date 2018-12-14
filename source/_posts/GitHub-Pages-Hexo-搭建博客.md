@@ -641,9 +641,34 @@ Gitalk 是一个基于 GitHub Issue 和 Preact 开发的评论插件，使用 Gi
 
 使用了[不蒜子统计](https://busuanzi.ibruce.info/)，配置简单，在主题配置文件中设置`busuanzi_count`的`enable`的值为`true`即可。
 
-###### 数学公式支持
+###### 数学公式支持 ######
 
 主题配置文件中，设置`mathjax`的值为`true`即可。借助于 MathJax 显示数学公式。
+配置文件中如下所示
+{% codeblock lang:yaml %}
+ # Math Equations Render Support
+ math:
+   enable: true
+
+   # Default(true) will load mathjax/katex script on demand
+   # That is it only render those page who has 'mathjax: true' in Front Matter.
+   # If you set it to false, it will load mathjax/katex srcipt EVERY PAGE.
+   # 默认为 ture。若为 false 每个页面均会载入该脚本（影响加载速度）
+   per_page: true
+
+   engine: mathjax
+{% endcodeblock %}
+
+在上述配置下，插入数学公式的博客 Front-matter 中均需要打开 `mathjax` 开关，如下所示。
+{% codeblock lang:yaml %}
+# Math Equations Render Support
+---
+title: test_mathjax
+date: 2018-12-05 12:01:30
+tags:
+mathjax: true
+--
+{% endcodeblock %}
 
 ###### 图床
 
