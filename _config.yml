@@ -92,5 +92,6 @@ search:
 
 # Kramed config
 kramed:
+  gfm: true
   smartypants: false
 
