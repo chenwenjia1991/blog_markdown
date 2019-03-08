@@ -80,7 +80,7 @@ theme: next
 deploy:
   type: git
   # repo: https://github.com/chenwenjia1991/chenwenjia1991.git
-  repo: git@github.com:chenwenjia1991/chenwenjia1991.github.io.git 
+  repo: git@chenwenjia1991.github.com:chenwenjia1991/chenwenjia1991.github.io.git 
   branch: master
 
 # Local Search
