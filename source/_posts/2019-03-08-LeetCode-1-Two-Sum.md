@@ -117,9 +117,7 @@ public:
                     return vector<int>{index, i};
                 return vector<int>{i, index};
             }// if
-            else {
-                map_value_index[nums[i]] = i;
-            }// else
+            map_value_index[nums[i]] = i;
         }// for
         return vector<int>{-1, -1};
     }// twoSum_HashTable
@@ -127,4 +125,5 @@ public:
 {% endcodeblock %}
 
 ## 总结 ##
-On the way！
+作为 LeetCode 的第一道题目，选择了这样一道如何加速检索过程的题目。对程序员而言，排序和查找指定元素是最基本的知识之一。在实际工程中，如何做时间复杂度与空间复杂度的权衡也是常见的问题。该题目可以通过增加空间复杂度降低元素检索的时间复杂度，可作为标准例子对我们平时如何选择算法实现有所帮助。
+开题之作，聊以自慰。路在脚下，不断前行~共勉之。
