@@ -95,6 +95,49 @@ public:
 };
 {% endcodeblock %}
 
+上述代码的三个 *while* 中判断条件等出现了较多循环，从代码整洁角度可以合并，运行结果 runtime 击败了 96.58% 的 CPP 提交结果。
+{% blockquote %}
+1563 / 1563 test cases passed.
+Status: **Accepted**
+Runtime: **40 ms**
+Memory Usage: **19.1 MB**
+{% endblockquote %}
+
+源代码如下
+{% codeblock lang:cpp %}
+/**
+ * Definition for singly-linked list.
+ * struct ListNode {
+ *     int val;
+ *     ListNode *next;
+ *     ListNode(int x) : val(x), next(NULL) {}
+ * };
+ */
+class Solution {
+public:
+    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {
+        if (l1 == NULL || l2 == NULL)
+            return NULL;
+        int sum = l1->val + l2->val;
+        ListNode *sum_result = new ListNode(sum % 10);
+        ListNode *cur_p = sum_result, *p1 = l1->next, *p2 = l2->next;
+        int flag_carry = sum / 10;
+        while(p1 || p2) {
+            int p1_val = ((NULL == p1)? 0: p1->val);
+            int p2_val = ((NULL == p2)? 0: p2->val);
+            sum = p1_val + p2_val + flag_carry;
+            cur_p->next = new ListNode(sum % 10);
+            flag_carry = sum / 10;
+            cur_p = cur_p->next;
+            if (NULL != p1) p1 = p1->next;
+            if (NULL != p2) p2 = p2->next;
+        }// while
+        if (flag_carry > 0)
+            cur_p->next = new ListNode(flag_carry);
+        return sum_result;
+    }// addTwoNumbers
+};
+{% endcodeblock %}
 
 ## 总结 ##
 对该类题目，除了要对常见的数据结构熟悉及灵活应用外，一定要注意对边界条件的判断。在面试及日常工程代码中，入口处先进性输入参数的合理性检查是非常有必要的。确定对异常结果如何处理非常考验工程实践水平和逻辑的完整性。
