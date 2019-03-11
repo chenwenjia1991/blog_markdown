@@ -18,12 +18,9 @@ tags:
 Given a string, find the length of the **longest substring** without repeating characters.
 
 ### 题目大意 ###
-给定两个非空链表来表示两个非负整数。数字在链表中以逆序的方式存储，每个节点存储一位数字。将这两个数相加并返回表示结果的链表的头。
-可假设这两个数字除 0 本身外，不存在前面有有多 0。
+在给定字符串中找到不含重复字符的最长子串的长度。
 
 ### 测试用例 ###
-这里未定义异常数据或不满足条件的数据返回情况，自定义异常情况下返回 NULL 指针。
-
 Example 1
 {% codeblock lang:yaml %}
 Input: "abcabcbb"
