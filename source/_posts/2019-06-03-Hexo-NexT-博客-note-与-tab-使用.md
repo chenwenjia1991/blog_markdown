@@ -93,7 +93,7 @@ Any content (support inline tags too).
 > * `index` 表示起始显示标签页，和 `Unique name` 用逗号隔开；
 > * `Tab caption` 表示标签页名；
 > * `icon` 表示 [FontAwesome](https://fontawesome.com/icons?d=gallery) 符号，以 `@` 开始，和 `Tab caption` 用空格隔开；
-> * 每一对 `{% tabs %}` 和 `{% endtabs %}` 之间表示一个标签块；每一对 `<!-- tab -->` 和 `<!-- endtab -->` 之间表示一个标签页，每个标签块可以有多个标签页；
+> * 每一对 `tabs` 和 `endtabs` 之间表示一个标签块；每一对 `<!-- tab -->` 和 `<!-- endtab -->` 之间表示一个标签页，每个标签块可以有多个标签页；
 > * 标签块名需不一致，否则影响实现。
 
 实例如下
