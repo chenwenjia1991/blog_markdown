@@ -2,7 +2,7 @@
 title: Hexo-NexT 博客 note 与 tab 使用
 date: 2019-06-03 15:24:02
 categories:
- -DevelopTools
+ - DevelopTools
 tags:
  - Hexo
  - NexT
